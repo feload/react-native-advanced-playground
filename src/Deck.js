@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import { View, Animated, PanResponder, Dimensions } from 'react-native';
 
-const SCREEN_WITH = Dimensions.get('window').width * 1.5;
+const SCREEN_WITH = Dimensions.get('window').width;
+const SWIPE_THRESHOLD = SCREEN_WITH * 0.5;
+const SWIPE_OUT_DURATION = 500;
 
 class Deck extends Component {
   constructor () {
@@ -10,15 +12,30 @@ class Deck extends Component {
     this.getCardStyle = this.getCardStyle.bind(this);
     this.position = new Animated.ValueXY(0, 0);
     this.resetPosition = this.resetPosition.bind(this);
+    this.forceSwipeCard = this.forceSwipeCard.bind(this);
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (event, { dx, dy }) => {
         this.position.setValue({ x: dx });
       },
-      onPanResponderRelease: () => {
-        this.resetPosition();
+      onPanResponderRelease: (event, { dx }) => {
+        if (dx > SWIPE_THRESHOLD) {
+          this.forceSwipeCard(SCREEN_WITH);
+        }else if (dx < -SWIPE_THRESHOLD) {
+          this.forceSwipeCard(-SCREEN_WITH);
+        } else {
+          this.resetPosition();
+        }
       }
     });
+  }
+
+  forceSwipeCard (x) {
+    const position = this.position;
+    Animated.timing(position, {
+      toValue: { x },
+      duration: SWIPE_OUT_DURATION // ms.
+    }).start();
   }
 
   resetPosition () {
@@ -31,7 +48,7 @@ class Deck extends Component {
   getCardStyle () {
     const position = this.position;
     const rotate = position.x.interpolate({
-      inputRange: [-SCREEN_WITH, 0, SCREEN_WITH],
+      inputRange: [-SCREEN_WITH * 1.5, 0, SCREEN_WITH * 1.5],
       outputRange: ['-120deg', '0deg', '120deg']
     });
 
