@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
-import { View, Animated, PanResponder } from 'react-native';
+import { View, Animated, PanResponder, Dimensions } from 'react-native';
+
+const SCREEN_WITH = Dimensions.get('window').width * 1.5;
 
 class Deck extends Component {
   constructor () {
@@ -7,19 +9,29 @@ class Deck extends Component {
 
     this.getCardStyle = this.getCardStyle.bind(this);
     this.position = new Animated.ValueXY(0, 0);
+    this.resetPosition = this.resetPosition.bind(this);
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (event, { dx, dy }) => {
-        this.position.setValue({ x: dx, y: dy });
+        this.position.setValue({ x: dx });
       },
-      onPanResponderRelease: () => {}
+      onPanResponderRelease: () => {
+        this.resetPosition();
+      }
     });
+  }
+
+  resetPosition () {
+    const position = this.position;
+    Animated.spring(position, {
+      toValue: { x: 0, y: 0 }
+    }).start();
   }
 
   getCardStyle () {
     const position = this.position;
     const rotate = position.x.interpolate({
-      inputRange: [-500, 0, 500],
+      inputRange: [-SCREEN_WITH, 0, SCREEN_WITH],
       outputRange: ['-120deg', '0deg', '120deg']
     });
 
