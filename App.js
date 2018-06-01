@@ -21,6 +21,12 @@ export default class App extends Component {
     )
   }
 
+  onSwipeLeft () {
+  }
+
+  onSwipeRight () {
+  }
+
   render() {
     return (
       <View style={styles.container}>

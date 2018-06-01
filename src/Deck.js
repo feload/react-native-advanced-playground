@@ -6,13 +6,18 @@ const SWIPE_THRESHOLD = SCREEN_WITH * 0.5;
 const SWIPE_OUT_DURATION = 500;
 
 class Deck extends Component {
+  static defaultProps = {
+    onSwipeLeft: () => { console.log('default onSwipeLeft') },
+    onSwipeRight: () =>{ console.log('default onSwipeRight') }
+  }
+
   constructor () {
     super();
-
+    this.state = { index: 0 };
     this.getCardStyle = this.getCardStyle.bind(this);
     this.position = new Animated.ValueXY(0, 0);
     this.resetPosition = this.resetPosition.bind(this);
-    this.forceSwipeCard = this.forceSwipeCard.bind(this);
+    this.swipeCard = this.swipeCard.bind(this);
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (event, { dx, dy }) => {
@@ -20,9 +25,9 @@ class Deck extends Component {
       },
       onPanResponderRelease: (event, { dx }) => {
         if (dx > SWIPE_THRESHOLD) {
-          this.forceSwipeCard(SCREEN_WITH);
+          this.swipeCard('right');
         }else if (dx < -SWIPE_THRESHOLD) {
-          this.forceSwipeCard(-SCREEN_WITH);
+          this.swipeCard('left');
         } else {
           this.resetPosition();
         }
@@ -30,12 +35,21 @@ class Deck extends Component {
     });
   }
 
-  forceSwipeCard (x) {
+  swipeCard (direction) {
     const position = this.position;
+    const x = (direction === 'left') ? -SCREEN_WITH : SCREEN_WITH;
     Animated.timing(position, {
       toValue: { x },
       duration: SWIPE_OUT_DURATION // ms.
-    }).start();
+    }).start(() => this.onSwipeComplete(direction));
+  }
+
+  onSwipeComplete (direction) {
+    const { onSwipeLeft, onSwipeRight } = this.props;
+    const item = this.props.data[this.state.index];
+    direction === 'right' ? onSwipeRight(item) : onSwipeLeft(item);
+    this.position.setValue({ x: 0, y: 0 });
+    this.setState({ index: this.state.index + 1 });
   }
 
   resetPosition () {
@@ -61,8 +75,10 @@ class Deck extends Component {
   }
 
   renderCards () {
-    return this.props.data.map((item, index) => {
-      if(index === 0) {
+    const { index } = this.state;
+    return this.props.data.map((item, idx) => {
+      if (idx < index) return null;
+      if(idx === index) {
         return (
           <Animated.View
             key={item.id}
