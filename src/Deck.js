@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { View, Animated, PanResponder, Dimensions } from 'react-native';
 
-const SCREEN_WITH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = SCREEN_WITH * 0.5;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.5;
 const SWIPE_OUT_DURATION = 500;
 
 class Deck extends Component {
@@ -15,8 +15,8 @@ class Deck extends Component {
     super();
     this.state = { index: 0 };
     this.getCardStyle = this.getCardStyle.bind(this);
-    this.position = new Animated.ValueXY(0, 0);
     this.resetPosition = this.resetPosition.bind(this);
+    this.position = new Animated.ValueXY(0, 0);
     this.swipeCard = this.swipeCard.bind(this);
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -37,9 +37,9 @@ class Deck extends Component {
 
   swipeCard (direction) {
     const position = this.position;
-    const x = (direction === 'left') ? -SCREEN_WITH : SCREEN_WITH;
+    const x = (direction === 'left') ? -SCREEN_WIDTH : SCREEN_WIDTH;
     Animated.timing(position, {
-      toValue: { x },
+      toValue: { x, y: 0 },
       duration: SWIPE_OUT_DURATION // ms.
     }).start(() => this.onSwipeComplete(direction));
   }
@@ -53,8 +53,7 @@ class Deck extends Component {
   }
 
   resetPosition () {
-    const position = this.position;
-    Animated.spring(position, {
+    Animated.spring(this.position, {
       toValue: { x: 0, y: 0 }
     }).start();
   }
@@ -62,12 +61,12 @@ class Deck extends Component {
   getCardStyle () {
     const position = this.position;
     const rotate = position.x.interpolate({
-      inputRange: [-SCREEN_WITH * 1.5, 0, SCREEN_WITH * 1.5],
+      inputRange: [-SCREEN_WIDTH * 1.5, 0, SCREEN_WIDTH * 1.5],
       outputRange: ['-120deg', '0deg', '120deg']
     });
 
     return {
-      ...this.position.getLayout(),
+      ...position.getLayout(),
       transform: [{
         rotate
       }]
@@ -81,19 +80,19 @@ class Deck extends Component {
     }
 
     return this.props.data.map((item, idx) => {
-      if (idx < index) return null;
+      if (idx < index) { return null; }
       if(idx === index) {
         return (
           <Animated.View
             key={item.id}
-            style={[this.getCardStyle(), styles.cardStyle]}
+            style={[this.getCardStyle(), styles.cardStyle, { zIndex: 99 }]}
             {...this.panResponder.panHandlers}>
-            { this.props.renderCard(item) }
+            {this.props.renderCard(item)}
           </Animated.View>
         )
       }
       return (
-        <Animated.View key={item.id} style={styles.cardStyle}>
+        <Animated.View key={item.id} style={[styles.cardStyle, { top: 10 * (idx - this.state.index), zIndex: 5 }]}>
           { this.props.renderCard(item) }
         </Animated.View>
       )
@@ -111,7 +110,8 @@ class Deck extends Component {
 
 const styles = {
   cardStyle: {
-    position: 'absolute'
+    position: 'absolute',
+    width: SCREEN_WIDTH
   }
 }
 
